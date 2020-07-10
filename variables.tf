@@ -24,3 +24,44 @@ variable "tags" {
 variable "spinnaker_version" {
   default = "1.21.0"
 }
+
+variable "ingress_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable or disable creation of ingress resources"
+}
+
+variable "ingress_deck_hostname" {
+  type        = string
+  default     = "localhost"
+  description = "Deck Ingress hostnames"
+}
+
+variable "ingress_gate_hostname" {
+  type        = string
+  default     = "localhost"
+  description = "Gate Ingress hostnames"
+}
+
+variable "ingress_cluster_issuer" {
+  type        = string
+  default     = "letsencrypt"
+  description = "Cert-manager cluster issuer"
+}
+
+variable "ingress_class" {
+  type        = string
+  default     = "nginx"
+  description = "Ingress class"
+}
+
+variable "oauth_github_client_id" {
+  description = "Github OAUTH client id"
+  type        = string
+}
+
+variable "oauth_github_client_secret" {
+  description = "Github OAUTH client secret"
+  type        = string
+}
+

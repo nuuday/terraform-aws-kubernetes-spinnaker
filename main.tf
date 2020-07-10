@@ -20,8 +20,13 @@ locals {
         data = {
           "enable_prometheus.sh" = <<EOF
             $HAL_COMMAND config metric-stores prometheus enable
-            $HAL_COMMAND config security ui edit --override-base-url http://localhost:9000
-            $HAL_COMMAND config security api edit --override-base-url http://localhost:8084
+            $HAL_COMMAND config security ui edit --override-base-url https://${var.ingress_deck_hostname}
+            $HAL_COMMAND config security api edit --override-base-url https://${var.ingress_gate_hostname}
+            $HAL_COMMAND config security authn oauth2 edit --provider github \
+                --client-id ${var.oauth_github_client_id} \
+                --client-secret ${var.oauth_github_client_secret} \
+                --pre-established-redirect-uri https://${var.ingress_gate_hostname}/login
+            $HAL_COMMAND config security authn oauth2 enable
           EOF
         }
       }
@@ -32,6 +37,16 @@ locals {
             securityContext = {
               fsGroup = 100
             }
+          }
+        }
+        "deck.yml" = {
+          kubernetes = {
+            serviceType = "ClusterIP"
+          }
+        }
+        "gate.yml" = {
+          kubernetes = {
+            serviceType = "ClusterIP"
           }
         }
       }
@@ -51,11 +66,34 @@ locals {
       }
     }
     ingress = {
-      enabled = true
+      enabled = var.ingress_enabled
+      host = var.ingress_deck_hostname
+      annotations = {
+        "kubernetes.io/ingress.class" : var.ingress_class
+        "cert-manager.io/cluster-issuer" : var.ingress_cluster_issuer
+      }
+      tls = [
+        {
+          secretName = "spinnaker-deck-tls"
+          hosts = [var.ingress_deck_hostname]
+        }
+      ]
     }
     ingressGate = {
-      enabled = true
+      enabled = var.ingress_enabled
+      host = var.ingress_gate_hostname
+      annotations = {
+        "kubernetes.io/ingress.class" : var.ingress_class
+        "cert-manager.io/cluster-issuer" : var.ingress_cluster_issuer
+      }
+      tls = [
+        {
+          secretName = "spinnaker-gate-tls"
+          hosts = [var.ingress_gate_hostname]
+        }
+      ]
     }
+
     minio = {
       enabled = false
     }
