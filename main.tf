@@ -27,6 +27,20 @@ locals {
                 --client-secret ${var.oauth_github_client_secret} \
                 --pre-established-redirect-uri https://${var.ingress_gate_hostname}/login
             $HAL_COMMAND config security authn oauth2 enable
+
+            %{ for account in var.accounts.kubernetes }
+            if $HAL_COMMAND config provider kubernetes account get ${account.context}; then
+              PROVIDER_COMMAND='edit'
+            else
+              PROVIDER_COMMAND='add'
+            fi
+            $HAL_COMMAND config provider kubernetes account $PROVIDER_COMMAND ${account.context}  \
+                        --context ${account.context} \
+                        --kubeconfig-file /opt/kube/kubeconfig \
+                        --only-spinnaker-managed true \
+                        --namespaces=${join(",", account.namespaces)} \
+                        --provider-version v2
+            %{ endfor }
           EOF
         }
       }
@@ -61,6 +75,10 @@ locals {
       }
     }
     kubeConfig = {
+      enabled = true
+      secretName = kubernetes_secret.kubeconfig.metadata[0].name
+      secretKey = "kubeconfig"
+      deploymentContext = var.deployment_context
       onlySpinnakerManaged = {
         enabled = true
       }
@@ -138,23 +156,48 @@ resource "aws_iam_role_policy" "halyard" {
   policy = data.aws_iam_policy_document.spinnaker.json
 }
 
-resource "kubernetes_namespace" "spinnaker" {
-  metadata {
-    name = "spinnaker"
-  }
-}
-
-
 resource "kubernetes_service_account" "spinnaker" {
   metadata {
     name      = "spinnaker"
-    namespace = kubernetes_namespace.spinnaker.metadata[0].name
+    namespace = var.namespace
     annotations = {
       "eks.amazonaws.com/role-arn" = module.iam.this_iam_role_arn
     }
   }
 }
 
+resource "local_file" "kubeconfig" {
+  count = length(var.accounts.kubernetes)
+  filename = "kubeconfig-${count.index}"
+  sensitive_content = var.accounts.kubernetes[count.index].kubeconfig
+}
+
+module "kubeconfig" {
+  source  = "matti/resource/shell"
+  environment = {
+    KUBECONFIG = join(":", [for i, file in local_file.kubeconfig : file.filename])
+  }
+  command = "kubectl config view --flatten #${timestamp()}"
+}
+
+resource "kubernetes_secret" "kubeconfig" {
+  depends_on = [module.kubeconfig]
+  metadata {
+    name = "kubernetes-accounts"
+    namespace = var.namespace
+  }
+  data = {
+   kubeconfig = module.kubeconfig.stdout
+   timestamp = timestamp()
+  }
+}
+
+output "kubeconfig" {
+  value = {
+    stdout = module.kubeconfig.stdout
+    kubeconfig = join(";", [for i, file in local_file.kubeconfig : file.filename])
+  }
+}
 
 module "s3_bucket" {
   source = "terraform-aws-modules/s3-bucket/aws"
@@ -176,6 +219,33 @@ resource "helm_release" "spinnaker" {
   namespace        = local.namespace
   create_namespace = false
 
-  wait   = true
+  wait   = false
   values = [yamlencode(local.values)]
+}
+
+resource "kubernetes_cluster_role" "spinnaker" {
+  metadata {
+    name      = "spinnaker"
+  }
+  rule {
+    api_groups = [""]
+    verbs      = ["get", "list"]
+    resources  = ["namespaces"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "spinnaker" {
+  metadata {
+    name      = "spinnaker"
+  }
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "spinnaker"
+  }
+  subject {
+    namespace = var.deployment_serviceaccount_namespace
+    kind      = "ServiceAccount"
+    name      = var.deployment_serviceaccount_name
+  }
 }
