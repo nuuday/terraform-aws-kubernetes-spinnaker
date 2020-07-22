@@ -66,20 +66,20 @@ variable "oauth_github_client_secret" {
 }
 
 variable "deployment_context" {
-  type = string
+  type        = string
   description = "Context to use when deploying spinnaker"
 }
 
 variable "deployment_serviceaccount_name" {
-  type = string
+  type        = string
   description = "service account to use when deploying spinnaker"
-  default = "spinnaker"
+  default     = "spinnaker"
 }
 
 variable "deployment_serviceaccount_namespace" {
-  type = string
+  type        = string
   description = "service account namespace"
-  default = "kube-system"
+  default     = "kube-system"
 }
 
 variable "accounts" {
@@ -88,7 +88,7 @@ variable "accounts" {
   }
   type = object({
     kubernetes = list(object({
-      context = string
+      context    = string
       kubeconfig = string
       namespaces = list(string)
     }))

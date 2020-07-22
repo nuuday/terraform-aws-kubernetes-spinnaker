@@ -28,7 +28,7 @@ locals {
                 --pre-established-redirect-uri https://${var.ingress_gate_hostname}/login
             $HAL_COMMAND config security authn oauth2 enable
 
-            %{ for account in var.accounts.kubernetes }
+            %{for account in var.accounts.kubernetes}
             if $HAL_COMMAND config provider kubernetes account get ${account.context}; then
               PROVIDER_COMMAND='edit'
             else
@@ -40,7 +40,7 @@ locals {
                         --only-spinnaker-managed true \
                         --namespaces=${join(",", account.namespaces)} \
                         --provider-version v2
-            %{ endfor }
+            %{endfor}
           EOF
         }
       }
@@ -75,9 +75,9 @@ locals {
       }
     }
     kubeConfig = {
-      enabled = true
-      secretName = kubernetes_secret.kubeconfig.metadata[0].name
-      secretKey = "kubeconfig"
+      enabled           = true
+      secretName        = kubernetes_secret.kubeconfig.metadata[0].name
+      secretKey         = "kubeconfig"
       deploymentContext = var.deployment_context
       onlySpinnakerManaged = {
         enabled = true
@@ -85,7 +85,7 @@ locals {
     }
     ingress = {
       enabled = var.ingress_enabled
-      host = var.ingress_deck_hostname
+      host    = var.ingress_deck_hostname
       annotations = {
         "kubernetes.io/ingress.class" : var.ingress_class
         "cert-manager.io/cluster-issuer" : var.ingress_cluster_issuer
@@ -93,13 +93,13 @@ locals {
       tls = [
         {
           secretName = "spinnaker-deck-tls"
-          hosts = [var.ingress_deck_hostname]
+          hosts      = [var.ingress_deck_hostname]
         }
       ]
     }
     ingressGate = {
       enabled = var.ingress_enabled
-      host = var.ingress_gate_hostname
+      host    = var.ingress_gate_hostname
       annotations = {
         "kubernetes.io/ingress.class" : var.ingress_class
         "cert-manager.io/cluster-issuer" : var.ingress_cluster_issuer
@@ -107,7 +107,7 @@ locals {
       tls = [
         {
           secretName = "spinnaker-gate-tls"
-          hosts = [var.ingress_gate_hostname]
+          hosts      = [var.ingress_gate_hostname]
         }
       ]
     }
@@ -130,14 +130,14 @@ data aws_caller_identity "spinnaker" {}
 module "iam" {
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
 
-  create_role                   = true
-  role_name                     = "${local.release_name}-irsa-${local.bucket_name}-halyard"
-  provider_url                  = local.provider_url
+  create_role  = true
+  role_name    = "${local.release_name}-irsa-${local.bucket_name}-halyard"
+  provider_url = local.provider_url
   oidc_fully_qualified_subjects = [
     "system:serviceaccount:${local.namespace}:${local.release_name}-spinnaker-halyard",
     "system:serviceaccount:${local.namespace}:spinnaker"
   ]
-  tags                          = var.tags
+  tags = var.tags
 }
 
 data "aws_iam_policy_document" "spinnaker" {
@@ -167,13 +167,13 @@ resource "kubernetes_service_account" "spinnaker" {
 }
 
 resource "local_file" "kubeconfig" {
-  count = length(var.accounts.kubernetes)
-  filename = "kubeconfig-${count.index}"
+  count             = length(var.accounts.kubernetes)
+  filename          = "kubeconfig-${count.index}"
   sensitive_content = var.accounts.kubernetes[count.index].kubeconfig
 }
 
 module "kubeconfig" {
-  source  = "matti/resource/shell"
+  source = "matti/resource/shell"
   environment = {
     KUBECONFIG = join(":", [for i, file in local_file.kubeconfig : file.filename])
   }
@@ -183,18 +183,18 @@ module "kubeconfig" {
 resource "kubernetes_secret" "kubeconfig" {
   depends_on = [module.kubeconfig]
   metadata {
-    name = "kubernetes-accounts"
+    name      = "kubernetes-accounts"
     namespace = var.namespace
   }
   data = {
-   kubeconfig = module.kubeconfig.stdout
-   timestamp = timestamp()
+    kubeconfig = module.kubeconfig.stdout
+    timestamp  = timestamp()
   }
 }
 
 output "kubeconfig" {
   value = {
-    stdout = module.kubeconfig.stdout
+    stdout     = module.kubeconfig.stdout
     kubeconfig = join(";", [for i, file in local_file.kubeconfig : file.filename])
   }
 }
@@ -225,7 +225,7 @@ resource "helm_release" "spinnaker" {
 
 resource "kubernetes_cluster_role" "spinnaker" {
   metadata {
-    name      = "spinnaker"
+    name = "spinnaker"
   }
   rule {
     api_groups = [""]
@@ -236,7 +236,7 @@ resource "kubernetes_cluster_role" "spinnaker" {
 
 resource "kubernetes_cluster_role_binding" "spinnaker" {
   metadata {
-    name      = "spinnaker"
+    name = "spinnaker"
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
