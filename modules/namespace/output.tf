@@ -1,3 +1,3 @@
 output "namespace" {
-  value = kubernetes_namespace.spinnaker[0].metadata[0].name
+  value = data.kubernetes_namespace.spinnaker.metadata[0].name
 }
