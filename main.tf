@@ -39,9 +39,28 @@ locals {
                         --kubeconfig-file /opt/kube/kubeconfig \
                         --only-spinnaker-managed true \
                         --namespaces=${join(",", account.namespaces)} \
+                        --all-kinds \
                         --provider-version v2
+            $HAL_COMMAND config provider kubernetes account edit ${account.context} --remove-omit-namespace kube-system
+            $HAL_COMMAND config provider kubernetes account edit ${account.context} --remove-omit-namespace kube-public
             %{endfor}
-          EOF
+
+            $HAL_COMMAND config artifact helm enable
+            %{for account in var.accounts.helm}
+            if $HAL_COMMAND config artifact helm account get ${account.name}; then
+              PROVIDER_COMMAND='edit'
+            else
+              PROVIDER_COMMAND='add'
+            fi
+            $HAL_COMMAND config artifact helm account $PROVIDER_COMMAND ${account.name}  \
+                        --repository ${account.url} \
+                        --username-password-file /opt/halyard/additionalSecrets/helm-${account.name}.txt
+            %{endfor}
+
+            $HAL_COMMAND config provider docker-registry account delete dockerhub
+            $HAL_COMMAND config ci wercker disable
+            $HAL_COMMAND config repository artifactory disable
+            EOF
         }
       }
       additionalServiceSettings = {
@@ -64,6 +83,13 @@ locals {
           }
         }
       }
+      additionalSecrets = {
+        create = true
+        data = zipmap(
+          [for i, v in var.accounts.helm : "helm-${v.name}.txt"],
+          [for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}") ]
+        )
+      }
     }
     spinnakerFeatureFlags = [
       "managed-pipeline-templates-v2-ui",
@@ -78,6 +104,9 @@ locals {
       enabled           = true
       secretName        = kubernetes_secret.kubeconfig.metadata[0].name
       secretKey         = "kubeconfig"
+      contexts = [
+        var.deployment_context
+      ]
       deploymentContext = var.deployment_context
       onlySpinnakerManaged = {
         enabled = true
@@ -159,7 +188,7 @@ resource "aws_iam_role_policy" "halyard" {
 resource "kubernetes_service_account" "spinnaker" {
   metadata {
     name      = "spinnaker"
-    namespace = var.namespace
+    namespace = kubernetes_namespace.spinnaker.metadata[0].name
     annotations = {
       "eks.amazonaws.com/role-arn" = module.iam.this_iam_role_arn
     }
@@ -170,6 +199,12 @@ resource "local_file" "kubeconfig" {
   count             = length(var.accounts.kubernetes)
   filename          = "kubeconfig-${count.index}"
   sensitive_content = var.accounts.kubernetes[count.index].kubeconfig
+}
+
+resource "kubernetes_namespace" "spinnaker" {
+  metadata {
+    name = var.namespace
+  }
 }
 
 module "kubeconfig" {
@@ -248,4 +283,10 @@ resource "kubernetes_cluster_role_binding" "spinnaker" {
     kind      = "ServiceAccount"
     name      = var.deployment_serviceaccount_name
   }
+}
+
+module "spinnaker_namespace" {
+  source       = "./modules/namespace"
+  namespace = var.namespace
+  create_namespace = false
 }

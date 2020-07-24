@@ -22,7 +22,7 @@ variable "tags" {
 }
 
 variable "spinnaker_version" {
-  default = "1.21.0"
+  default = "1.21.2"
 }
 
 variable "ingress_enabled" {
@@ -85,12 +85,19 @@ variable "deployment_serviceaccount_namespace" {
 variable "accounts" {
   default = {
     kubernetes = []
+    helm       = []
   }
   type = object({
     kubernetes = list(object({
       context    = string
       kubeconfig = string
       namespaces = list(string)
+    }))
+    helm = list(object({
+      url      = string
+      name     = string
+      username = string
+      password = string
     }))
   })
 }
