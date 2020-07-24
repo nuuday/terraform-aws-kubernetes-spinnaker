@@ -2,15 +2,15 @@ variable "namespace" {
   type = string
 }
 variable "create_namespace" {
-  type = bool
+  type    = bool
   default = true
 }
 
 variable "serviceaccount_name" {
   default = "spinnaker"
-  type = string
+  type    = string
 }
 variable "serviceaccount_namespace" {
   default = "kube-system"
-  type = string
+  type    = string
 }

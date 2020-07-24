@@ -6,13 +6,13 @@ variable "kubeconfig" {
   type = string
 }
 variable "enabled" {
-  type = bool
+  type    = bool
   default = true
 }
 variable "context_name" {
   type = string
 }
 variable "namespaces" {
-  type = list(string)
+  type    = list(string)
   default = []
 }

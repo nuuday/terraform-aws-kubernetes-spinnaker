@@ -87,7 +87,7 @@ locals {
         create = true
         data = zipmap(
           [for i, v in var.accounts.helm : "helm-${v.name}.txt"],
-          [for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}") ]
+          [for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}")]
         )
       }
     }
@@ -101,9 +101,9 @@ locals {
       }
     }
     kubeConfig = {
-      enabled           = true
-      secretName        = kubernetes_secret.kubeconfig.metadata[0].name
-      secretKey         = "kubeconfig"
+      enabled    = true
+      secretName = kubernetes_secret.kubeconfig.metadata[0].name
+      secretKey  = "kubeconfig"
       contexts = [
         var.deployment_context
       ]
@@ -286,7 +286,7 @@ resource "kubernetes_cluster_role_binding" "spinnaker" {
 }
 
 module "spinnaker_namespace" {
-  source       = "./modules/namespace"
-  namespace = var.namespace
+  source           = "./modules/namespace"
+  namespace        = var.namespace
   create_namespace = false
 }
