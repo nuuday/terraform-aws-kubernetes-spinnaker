@@ -51,7 +51,7 @@ jobs:
           tag: ${{ steps.version.outputs.new_tag }}
 
       - name: "Github: Create release"
-        uses: actions/create-release@v1
+        uses: actions/create-release@25a1bf7b5927ddc2c8c2a67d3bb564da1d3428bf
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
