@@ -38,7 +38,7 @@ locals {
                         --context ${account.context} \
                         --kubeconfig-file /opt/kube/kubeconfig \
                         --only-spinnaker-managed true \
-                        --namespaces=${join(",", account.namespaces)} \
+                        --namespaces="${join(",", account.namespaces)}" \
                         --all-kinds \
                         --provider-version v2
             $HAL_COMMAND config provider kubernetes account edit ${account.context} --remove-omit-namespace kube-system
