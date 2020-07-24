@@ -46,6 +46,11 @@ resource "kubernetes_role" "spinnaker" {
     resources  = ["services/proxy", "pods/portforward"]
     verbs      = ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
   }
+  rule {
+    api_groups = ["metrics.k8s.io"]
+    resources  = ["pods"]
+    verbs      = ["list", "get"]
+  }
 }
 
 resource "kubernetes_role_binding" "spinnaker" {
