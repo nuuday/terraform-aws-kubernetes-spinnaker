@@ -36,7 +36,7 @@ locals {
             fi
             $HAL_COMMAND config provider kubernetes account $PROVIDER_COMMAND ${account.context}  \
                         --context ${account.context} \
-                        --kubeconfig-file /opt/kube/kubeconfig \
+                        --kubeconfig-file /opt/halyard/additionalSecrets/accounts.kubeconfig \
                         --only-spinnaker-managed true \
                         --namespaces="${join(",", account.namespaces)}" \
                         --all-kinds \
