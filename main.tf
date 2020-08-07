@@ -287,6 +287,6 @@ resource "kubernetes_cluster_role_binding" "spinnaker" {
 
 module "spinnaker_namespace" {
   source           = "./modules/namespace"
-  namespace        = var.namespace
+  namespace        = kubernetes_namespace.spinnaker.metadata[0].name
   create_namespace = false
 }
