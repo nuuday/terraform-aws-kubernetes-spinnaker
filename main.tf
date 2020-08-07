@@ -108,9 +108,10 @@ locals {
         var.deployment_context
       ]
       deploymentContext = var.deployment_context
+      */
       onlySpinnakerManaged = {
         enabled = true
-      }*/
+      }
     }
     ingress = {
       enabled = var.ingress_enabled
