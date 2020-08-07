@@ -86,8 +86,8 @@ locals {
       additionalSecrets = {
         create = true
         data = zipmap(
-          [for i, v in var.accounts.helm : "helm-${v.name}.txt"] + ["accounts.kubeconfig"],
-          [for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}")] + [module.kubeconfig.stdout]
+          merge([for i, v in var.accounts.helm : "helm-${v.name}.txt"], ["accounts.kubeconfig"]),
+          merge([for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}")], [module.kubeconfig.stdout])
         )
       }
     }
