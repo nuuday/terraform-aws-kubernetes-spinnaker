@@ -86,8 +86,8 @@ locals {
       additionalSecrets = {
         create = true
         data = zipmap(
-          [for i, v in var.accounts.helm : "helm-${v.name}.txt"],
-          [for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}")]
+          [for i, v in var.accounts.helm : "helm-${v.name}.txt"] + ["accounts.kubeconfig"],
+          [for i, v in var.accounts.helm : base64encode("${v.username}:${trimspace(v.password)}")] + [module.kubeconfig.stdout]
         )
       }
     }
@@ -101,8 +101,8 @@ locals {
       }
     }
     kubeConfig = {
-      enabled    = true
-      secretName = kubernetes_secret.kubeconfig.metadata[0].name
+      enabled    = false
+/*      secretName = kubernetes_secret.kubeconfig.metadata[0].name
       secretKey  = "kubeconfig"
       contexts = [
         var.deployment_context
@@ -110,7 +110,7 @@ locals {
       deploymentContext = var.deployment_context
       onlySpinnakerManaged = {
         enabled = true
-      }
+      }*/
     }
     ingress = {
       enabled = var.ingress_enabled

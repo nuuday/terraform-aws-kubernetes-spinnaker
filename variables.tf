@@ -65,11 +65,6 @@ variable "oauth_github_client_secret" {
   type        = string
 }
 
-variable "deployment_context" {
-  type        = string
-  description = "Context to use when deploying spinnaker"
-}
-
 variable "deployment_serviceaccount_name" {
   type        = string
   description = "service account to use when deploying spinnaker"
